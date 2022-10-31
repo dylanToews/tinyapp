@@ -14,10 +14,21 @@ function generateRandomString() {
 app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
-
+//Need to update express erver so that 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("ok");
+  console.log(req.body.longURL);
+  let longURL = req.body.longURL
+  let shortURL = generateRandomString()
+  urlDatabase[shortURL] = longURL
+
+  res.redirect(`/urls/${shortURL}`)
+});
+
+
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id]
+  console.log(longURL)
+  res.redirect(longURL);
 });
 
 const urlDatabase = {

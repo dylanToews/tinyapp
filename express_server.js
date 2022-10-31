@@ -6,10 +6,19 @@ const PORT = 8080;
 
 //Tells express app to use EJS as its templating engine 
 
+function generateRandomString() {
+  let r = (Math.random() + 1).toString(36).substring(7);
+  return r;
+}
+
 app.set("view engine", "ejs");
 
+app.use(express.urlencoded({ extended: true }));
 
-
+app.post("/urls", (req, res) => {
+  console.log(req.body);
+  res.send("ok");
+});
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -25,9 +34,13 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 app.get("/urls/:id", (req, res) => {
-  const templateId = req.params.id
-  const templateVars = { id: req.params.id, longURL: urlDatabase[templateId] }
+  const templateId = req.params.id;
+  const templateVars = { id: req.params.id, longURL: urlDatabase[templateId] };
   res.render("urls_show", templateVars);
 });
 

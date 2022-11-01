@@ -14,19 +14,32 @@ function generateRandomString() {
 app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
-//Need to update express erver so that 
+
+
 app.post("/urls", (req, res) => {
   console.log(req.body.longURL);
-  let longURL = req.body.longURL
-  let shortURL = generateRandomString()
-  urlDatabase[shortURL] = longURL
-
-  res.redirect(`/urls/${shortURL}`)
+  let longURL = req.body.longURL;
+  let shortURL = generateRandomString();
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  console.log('delete button pressed')
+  const shortURL = req.params.urls;
+
+  console.log(req.params.id)
+  delete urlDatabase.shortURL
+
+  }
+  
+
+)
+
+
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id]
-  console.log(longURL)
+  const longURL = urlDatabase[req.params.id];
+  console.log(longURL);
   res.redirect(longURL);
 });
 
@@ -49,8 +62,8 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateId = req.params.id;
-  const templateVars = { id: req.params.id, longURL: urlDatabase[templateId] };
+  const shortURL = req.params.id;
+  const templateVars = { id: req.params.id, longURL: urlDatabase[shortURL] };
   res.render("urls_show", templateVars);
 });
 

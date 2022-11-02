@@ -1,11 +1,13 @@
 //Sets up express, port, encoding etc. 
 
+const cookieParser = require('cookie-parser');
 const { response } = require('express');
 const express = require('express');
 const app = express();
 const PORT = 8080;
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 
 
@@ -41,14 +43,20 @@ app.get('/', (req, res) => {
 //Browse 
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies["username"],
+  };
+  res.render("urls_new", templateVars);
 });
 
 
 //Read 
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -60,17 +68,35 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-//Edit 
+//Edit existing from index page 
 
 app.get("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
-  const templateVars = { id: req.params.id, longURL: urlDatabase[shortURL] };
+
+  const templateVars = {
+    username: req.cookies["username"],
+    id: req.params.id,
+    longURL: urlDatabase[shortURL]
+  };
   res.render("urls_show", templateVars);
 });
 
 
+//edit
 
-// Add
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id;
+  const longURL = req.body.editURL;
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls`);
+});
+
+//app.post("urls/:id", (req))
+
+
+
+
+// Add new URL 
 
 app.post("/urls", (req, res) => {
   console.log(req.body.longURL);
@@ -78,6 +104,25 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);
+});
+
+//Add new username and login
+
+app.post("/login", (req, res) => {
+  console.log("login req.body", req.body.username);
+  const loginUser = req.body.username;
+
+  res.cookie("username", loginUser);
+
+  res.redirect("/urls");
+});
+
+//Logout 
+
+app.post("/logout", (req, res) => {
+  console.log("logout button pressed");
+  res.clearCookie("username");
+  res.redirect("/urls");
 });
 
 
@@ -90,9 +135,6 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 }
 );
-
-
-
 
 
 

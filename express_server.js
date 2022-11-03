@@ -5,6 +5,8 @@ const { response } = require('express');
 const express = require('express');
 const app = express();
 const PORT = 8080;
+const bcrypt = require("bcryptjs");
+
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -119,7 +121,7 @@ app.get("/urls/:id", (req, res) => {
     res.send("Please login to view urls");
     return;
   }
-  if(id !== urlDatabase[shortURL].userID){
+  if (id !== urlDatabase[shortURL].userID) {
     res.send("Sorry, you can only view urls that you own!");
     return;
   }
@@ -209,12 +211,12 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "1",
+    hashedPassword: '$2a$10$fX9z72ImfNpoqkwY/88WwecSXUc1waSofMeSasPgB6Z.0gKtYAdgu'
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "1",
+    hashedPassword: '$2a$10$X09nH4YWd7sjT5Z8PwsHzeQ7rFxP9c0Ng80DIRKm7Kjme3CbR8FUO'
   },
 };
 
@@ -238,7 +240,8 @@ const checkEmailPassword = (email, enterPassword, users) => {
 
   let myObj = users[myId];
 
-  if (Object.values(myObj).includes(enterPassword)) {
+  const hashedPassword = users[myId].hashedPassword;
+  if (bcrypt.compareSync(enterPassword, hashedPassword)) {
     return myId;
   }
   return false;
@@ -262,7 +265,11 @@ app.post("/register", (req, res) => {
     return;
   }
 
-  users[id] = { id, email, password };
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  users[id] = { id, email, hashedPassword };
+
+  console.log(users[id]);
 
   res.cookie("user_id", id);
   res.redirect("/urls");
@@ -304,10 +311,10 @@ app.post("/login", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   //console.log('delete button pressed');
-  
-  const id = req.cookies.user_id
+
+  const id = req.cookies.user_id;
   const shortURL = req.params.id;
-  if(id !== urlDatabase[shortURL].userID){
+  if (id !== urlDatabase[shortURL].userID) {
     res.send("Sorry, you can only delete urls that you own!");
     return;
   }

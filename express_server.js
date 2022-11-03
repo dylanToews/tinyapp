@@ -20,13 +20,16 @@ function generateRandomString() {
 
 
 
-//// DATABASE 
+//// DATABASE
 
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+
+
 
 
 /// BREAD (GETS & POSTS)
@@ -43,8 +46,11 @@ app.get('/', (req, res) => {
 //Browse 
 
 app.get("/urls/new", (req, res) => {
+  const id = req.cookies.user_id;
+  const user = users[id];
+
   const templateVars = {
-    username: req.cookies["username"],
+    user,
   };
   res.render("urls_new", templateVars);
 });
@@ -53,9 +59,13 @@ app.get("/urls/new", (req, res) => {
 //Read 
 
 app.get("/urls", (req, res) => {
+  const id = req.cookies.user_id;
+  const user = users[id];
+
   const templateVars = {
+
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user,
   };
   res.render("urls_index", templateVars);
 });
@@ -72,9 +82,11 @@ app.get("/u/:id", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
+  const id = req.cookies.user_id;
+  const user = users[id];
 
   const templateVars = {
-    username: req.cookies["username"],
+    user,
     id: req.params.id,
     longURL: urlDatabase[shortURL]
   };
@@ -106,24 +118,131 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-//Add new username and login
+//Login 1 
 
-app.post("/login", (req, res) => {
-  console.log("login req.body", req.body.username);
-  const loginUser = req.body.username;
+// app.post("/login", (req, res) => {
+//   console.log("login req.body", req.body.username);
+//   const loginUser = req.body.username;
 
-  res.cookie("username", loginUser);
+//   res.cookie("username", loginUser);
 
-  res.redirect("/urls");
-});
+//   res.redirect("/urls");
+// });
 
 //Logout 
 
 app.post("/logout", (req, res) => {
   console.log("logout button pressed");
-  res.clearCookie("username");
+  res.clearCookie("user_id");
+  res.redirect("/login");
+});
+
+//Registration GET
+
+app.get("/register", (req, res) => {
+
+  res.render("urls_register", { user: null });
+});
+
+
+//Check Email Function 
+const checkEmailForDuplicates = (enterEmail) => {
+  let userKeys = Object.keys(users);
+  for (let keys of userKeys) {
+    let userEmail = users[keys].email;
+    if (enterEmail === userEmail) {
+      return true;
+    }
+  }
+};
+
+/// USERS 
+
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "e",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
+//Check email/password
+
+const checkEmailPassword = (email, enterPassword) => {
+
+  let userKeys = Object.keys(users);
+  for (let keys of userKeys) {
+    let allEmails = users[keys].email;
+    let myId;
+    if (allEmails === email) {
+      myId = keys;
+    }
+    let myObj = users[myId];
+
+    if (Object.values(myObj).includes(enterPassword)) {
+      return myId;
+    }
+    return false;
+  }
+};
+
+
+
+//Registration POST 
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (email.length === 0 || password.length === 0) {
+    res.status(400).send("Please fill all boxes before submitting");
+    return;
+  }
+
+  if (checkEmailForDuplicates(email)) {
+    res.status(400).send("Email has already been used, please choose another email");
+    return;
+  }
+
+
+  users[id] = { id, email, password };
+  res.cookie("user_id", id);
+  //res.redirect("/register")
   res.redirect("/urls");
 });
+
+// Login Page
+
+app.get("/login", (req, res) => {
+
+  res.render("urls_login", { user: null });
+});
+
+
+// Login Post 
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const id = req.body.id;
+
+  if (checkEmailForDuplicates(email) !== true) {
+    res.status(403).send("Email cannot be found");
+    return;
+  }
+
+  if (checkEmailPassword(email, password) === false) {
+    res.status(403).send("Email does not match password");
+    return;
+  }
+  res.cookie("user_id", checkEmailPassword(email, password));
+  res.redirect("/urls");
+});
+
 
 
 // DELETE 

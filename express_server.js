@@ -20,22 +20,6 @@ function generateRandomString() {
 
 
 
-//// DATABASE
-
-
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
-// const urlDatabase = {
-//   shortURL: {
-//     longURL : longURL,
-//     userID: userID
-
-//   }
-// }
-
 
 
 /// BREAD (GETS & POSTS)
@@ -69,13 +53,41 @@ app.get("/urls", (req, res) => {
   const id = req.cookies.user_id;
   const user = users[id];
 
+  if (!req.cookies.user_id) {
+    res.send("Please login to view urls");
+    return;
+  }
+
+  const userDatabase = urlsForUser(id);
+
   const templateVars = {
 
-    urls: urlDatabase,
+    urls: userDatabase,
     user,
   };
   res.render("urls_index", templateVars);
 });
+
+// Function to returns correct URLS for User
+
+const urlsForUser = (id) => {
+
+  let userDatabase = {};
+  for (let keys in urlDatabase) {
+    let userIdentifier = urlDatabase[keys].userID;
+    let longURL = urlDatabase[keys].longURL;
+    if (id === userIdentifier) {
+      userDatabase[keys] = {
+        longURL,
+        userID: userIdentifier
+      };
+    }
+  }
+  return userDatabase;
+
+};
+
+
 
 //GET - link from short url to actual long url 
 
@@ -83,6 +95,10 @@ app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   if (!urlDatabase[req.params.id]) {
     res.send("The page you are looking for does not exist!");
+  }
+  if (!req.cookies.user_id) {
+    res.send("Please login to view urls");
+    return;
   }
   console.log(longURL);
   res.redirect(longURL);
@@ -97,12 +113,19 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = {
     user,
     id: req.params.id,
-    longURL: urlDatabase[shortURL]
+    longURL: urlDatabase[shortURL].longURL
   };
   if (!req.cookies.user_id) {
-    res.redirect("/login");
+    res.send("Please login to view urls");
     return;
   }
+  if(id !== urlDatabase[shortURL].userID){
+    res.send("Sorry, you can only view urls that you own!");
+    return;
+  }
+
+
+
   res.render("urls_show", templateVars);
 });
 
@@ -117,19 +140,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 
-// URL Datbase Object 
 
-// const urlDatabase = {
-//   shorturl: {
-//     longURL: "https://www.tsn.ca",
-//     userID: "aJ48lW",
-//   },
-//   shorturl: {
-//     longURL: "https://www.google.ca",
-//     userID: "aJ48lW",
-//   },
-
-// }
 // Add new URL POST
 
 app.post("/urls", (req, res) => {
@@ -140,12 +151,27 @@ app.post("/urls", (req, res) => {
     res.send("Please log in");
     return;
   }
-
-  urlDatabase[shortURL] = longURL;
-  console.log(urlDatabase);
-
-  res.redirect(`/urls/${shortURL}`);
+  urlDatabase[shortURL] = {
+    longURL,
+    userID: req.cookies.user_id
+  };
+  res.redirect(`/urls`);
 });
+
+
+//// DATABASE
+
+let urlDatabase = {
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "userRandomID"
+  },
+
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "user2RandomID"
+  }
+};
 
 //Logout POST
 
@@ -188,7 +214,7 @@ const users = {
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "2",
+    password: "1",
   },
 };
 
@@ -278,7 +304,14 @@ app.post("/login", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   //console.log('delete button pressed');
+  
+  const id = req.cookies.user_id
   const shortURL = req.params.id;
+  if(id !== urlDatabase[shortURL].userID){
+    res.send("Sorry, you can only delete urls that you own!");
+    return;
+  }
+
   delete urlDatabase[shortURL];
   res.redirect("/urls");
 }

@@ -209,38 +209,46 @@ app.post("/urls", (req, res) => {
 // Short url hyperlink to long url website
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id].longURL;
-  if (!urlDatabase[req.params.id]) {
-    res.send("The page you are looking for does not exist!");
+
+  let userKeys = Object.keys(urlDatabase);
+  for (let keys of userKeys) {
+    if (keys === req.params.id) {
+      res.redirect(urlDatabase[req.params.id].longURL);
+      return;
+    }
   }
-  if (!req.session.user_id) {
-    res.send("Please login to view urls");
-    return;
-  }
-  res.redirect(longURL);
+  res.send("The page you are looking for does not exist!");
 });
 
 
 //Render edit url page 
 
 app.get("/urls/:id", (req, res) => {
-  const shortURL = req.params.id;
-  const id = req.session.user_id;
-  const user = users[id];
-  const templateVars = {
-    user,
-    id: req.params.id,
-    longURL: urlDatabase[shortURL].longURL
-  };
-  if (!req.session.user_id) {
-    res.send("Please login to view urls");
-    return;
+  let userKeys = Object.keys(urlDatabase);
+
+  for (let keys of userKeys) {
+    if (keys === req.params.id) {
+      const shortURL = req.params.id;
+      const id = req.session.user_id;
+      const user = users[id];
+      const templateVars = {
+        user,
+        id: req.params.id,
+        longURL: urlDatabase[shortURL].longURL
+      };
+      if (!req.session.user_id) {
+        res.send("Please login to view urls");
+        return;
+      }
+      if (id !== urlDatabase[shortURL].userID) {
+        res.send("Sorry, you can only view urls that you own!");
+        return;
+      }
+      res.render("urls_show", templateVars);
+      return;
+    }
   }
-  if (id !== urlDatabase[shortURL].userID) {
-    res.send("Sorry, you can only view urls that you own!");
-    return;
-  }
-  res.render("urls_show", templateVars);
+  res.send("The page you are looking for does not exist!");
 });
 
 
@@ -249,6 +257,16 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   const longURL = req.body.editURL;
+  const id = req.session.user_id;
+  
+  if (id !== urlDatabase[shortURL].userID) {
+    res.send("Sorry, you can only edit urls that you own!");
+    return;
+  }
+  if (!req.session.user_id) {
+    res.send("Please login to view urls");
+    return;
+  }
   urlDatabase[shortURL] = {
     longURL,
     userID: req.session.user_id
@@ -262,6 +280,7 @@ app.post("/urls/:id", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.session.user_id;
   const shortURL = req.params.id;
+
   if (id !== urlDatabase[shortURL].userID) {
     res.send("Sorry, you can only delete urls that you own!");
     return;

@@ -150,7 +150,6 @@ app.post("/login", (req, res) => {
 //Logout user
 
 app.post("/logout", (req, res) => {
-  console.log("logout button pressed");
   req.session = null;
   res.redirect("/login");
 });
@@ -168,7 +167,7 @@ app.get("/urls", (req, res) => {
   };
 
   if (!req.session.user_id) {
-    res.send("Please login to view urls");
+    res.redirect("/login");
     return;
   }
   res.render("urls_index", templateVars);
@@ -210,7 +209,7 @@ app.post("/urls", (req, res) => {
 // Short url hyperlink to long url website
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   if (!urlDatabase[req.params.id]) {
     res.send("The page you are looking for does not exist!");
   }

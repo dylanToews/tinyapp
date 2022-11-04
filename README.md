@@ -6,8 +6,8 @@ This project was built by Dylan Toews, along with the much needed help of the "R
 
 ## Final Product
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Main index of url tiny app"](https://github.com/dylanToews/tinyapp/blob/main/docs/url_index.png?raw=true)
+!["Shows create url page"](https://github.com/dylanToews/tinyapp/blob/main/docs/create_url.png?raw=true)
 
 ## Dependencies
 
